@@ -1,6 +1,14 @@
-import { Match, ParticipantResult, GroupType, MatchGame } from 'brackets-model';
-import { RankingHeader, Ranking, RankingFormula, RankingItem, RankingMap, Side, MatchWithMetadata } from './types';
-import { t } from './lang';
+import { Match, ParticipantResult, GroupType, MatchGame } from "brackets-model";
+import {
+    RankingHeader,
+    Ranking,
+    RankingFormula,
+    RankingItem,
+    RankingMap,
+    Side,
+    MatchWithMetadata,
+} from "./types";
+import { t } from "./lang";
 
 /**
  * Splits an array of objects based on their values at a given key.
@@ -18,8 +26,7 @@ export function splitBy<
     for (const obj of objects) {
         const commonValue = obj[key];
 
-        if (!map[commonValue])
-            map[commonValue] = [];
+        if (!map[commonValue]) map[commonValue] = [];
 
         map[commonValue].push(obj);
     }
@@ -42,16 +49,15 @@ export function splitByWithLeftovers<
     const map = {} as Record<string | number, U[]>;
 
     for (const obj of objects) {
-        const commonValue = obj[key] ?? '-1'; // Object keys are converted to a string.
+        const commonValue = obj[key] ?? "-1"; // Object keys are converted to a string.
 
-        if (!map[commonValue])
-            map[commonValue] = [];
+        if (!map[commonValue]) map[commonValue] = [];
 
         map[commonValue].push(obj);
     }
 
     const withoutLeftovers = Object.entries(map)
-        .filter(([key]) => key !== '-1')
+        .filter(([key]) => key !== "-1")
         .map(([_, value]) => value);
 
     const result = [...withoutLeftovers];
@@ -79,53 +85,69 @@ export function sortBy<
  * @param selector An optional selector to select the root element.
  */
 export function findRoot(selector?: string): HTMLElement {
-    const queryResult = document.querySelectorAll(selector || '.brackets-viewer');
+    const queryResult = document.querySelectorAll(
+        selector || ".brackets-viewer"
+    );
 
     if (queryResult.length === 0)
-        throw Error('Root not found. You must have at least one root element.');
+        throw Error("Root not found. You must have at least one root element.");
 
     if (queryResult.length > 1)
-        throw Error('Multiple possible roots were found. Please use `config.selector` to choose a specific root.');
+        throw Error(
+            "Multiple possible roots were found. Please use `config.selector` to choose a specific root."
+        );
 
     const root = queryResult[0] as HTMLElement;
 
-    if (!root.classList.contains('brackets-viewer'))
-        throw Error('The selected root must have a `.brackets-viewer` class.');
+    if (!root.classList.contains("brackets-viewer"))
+        throw Error("The selected root must have a `.brackets-viewer` class.");
 
     return root;
 }
 
 /**
  * Completes a list of matches with blank matches based on the next matches.
- * 
+ *
  * Toornament can generate first rounds with an odd number of matches and the seeding is partially distributed in the second round.
  * This function adds a blank match in the first round as if it was the source match of a seeded match of the second round.
- * 
+ *
  * @param bracketType Type of the bracket.
  * @param matches The list of first round matches.
  * @param nextMatches The list of second round matches.
  */
-export function completeWithBlankMatches(bracketType: GroupType, matches: MatchWithMetadata[], nextMatches?: MatchWithMetadata[]): {
-    matches: (MatchWithMetadata | null)[],
-    fromToornament: boolean,
+export function completeWithBlankMatches(
+    bracketType: GroupType,
+    matches: MatchWithMetadata[],
+    nextMatches?: MatchWithMetadata[]
+): {
+    matches: (MatchWithMetadata | null)[];
+    fromToornament: boolean;
 } {
-    if (!nextMatches)
-        return { matches, fromToornament: false };
+    if (!nextMatches) return { matches, fromToornament: false };
 
     let sources: (number | null)[] = [];
 
-    if (bracketType === 'single_bracket' || bracketType === 'winner_bracket')
-        sources = nextMatches.map(match => [match.opponent1?.position || null, match.opponent2?.position || null]).flat();
+    if (bracketType === "single_bracket" || bracketType === "winner_bracket")
+        sources = nextMatches
+            .map((match) => [
+                match.opponent1?.position || null,
+                match.opponent2?.position || null,
+            ])
+            .flat();
 
-    if (bracketType === 'loser_bracket')
-        sources = nextMatches.map(match => match.opponent2?.position || null);
+    if (bracketType === "loser_bracket")
+        sources = nextMatches.map((match) => match.opponent2?.position || null);
 
     // The manager does not set positions where the Toornament layer does.
-    if (sources.filter(source => source !== null).length === 0)
+    if (sources.filter((source) => source !== null).length === 0)
         return { matches, fromToornament: false };
 
     return {
-        matches: sources.map(source => source && matches.find(match => match.number === source) || null),
+        matches: sources.map(
+            (source) =>
+                (source && matches.find((match) => match.number === source)) ||
+                null
+        ),
         fromToornament: true,
     };
 }
@@ -138,17 +160,33 @@ export function completeWithBlankMatches(bracketType: GroupType, matches: MatchW
  * @param roundNumber Number of the round.
  * @param side Side of the participant.
  */
-export function getOriginAbbreviation(matchLocation: GroupType, skipFirstRound: boolean, roundNumber?: number, side?: Side): string | null {
+export function getOriginAbbreviation(
+    matchLocation: GroupType,
+    skipFirstRound: boolean,
+    roundNumber?: number,
+    side?: Side
+): string | null {
     roundNumber = roundNumber || -1;
 
-    if (skipFirstRound && matchLocation === 'loser_bracket' && roundNumber === 1)
-        return t('abbreviations.seed');
+    if (
+        skipFirstRound &&
+        matchLocation === "loser_bracket" &&
+        roundNumber === 1
+    )
+        return t("abbreviations.seed");
 
-    if (matchLocation === 'single_bracket' || matchLocation === 'winner_bracket' && roundNumber === 1)
-        return t('abbreviations.seed');
+    if (
+        matchLocation === "single_bracket" ||
+        (matchLocation === "winner_bracket" && roundNumber === 1)
+    )
+        return t("abbreviations.seed");
 
-    if (matchLocation === 'loser_bracket' && roundNumber % 2 === 0 && side === 'opponent1')
-        return t('abbreviations.position');
+    if (
+        matchLocation === "loser_bracket" &&
+        roundNumber % 2 === 0 &&
+        side === "opponent1"
+    )
+        return t("abbreviations.position");
 
     return null;
 }
@@ -177,16 +215,30 @@ export function rankingHeader(itemName: keyof RankingItem): RankingHeader {
  * @param matches The list of matches.
  * @param formula The points formula to apply.
  */
-export function getRanking(matches: Match[], formula?: RankingFormula): Ranking {
-    formula = formula || (
-        (item: RankingItem): number => 3 * item.wins + 1 * item.draws + 0 * item.losses
-    );
+export function getRanking(
+    matches: Match[],
+    formula?: RankingFormula
+): Ranking {
+    formula =
+        formula ||
+        ((item: RankingItem): number =>
+            3 * item.wins + 1 * item.draws + 0 * item.losses);
 
     const rankingMap: RankingMap = {};
 
     for (const match of matches) {
-        processParticipant(rankingMap, formula, match.opponent1, match.opponent2);
-        processParticipant(rankingMap, formula, match.opponent2, match.opponent1);
+        processParticipant(
+            rankingMap,
+            formula,
+            match.opponent1,
+            match.opponent2
+        );
+        processParticipant(
+            rankingMap,
+            formula,
+            match.opponent2,
+            match.opponent1
+        );
     }
 
     return createRanking(rankingMap);
@@ -200,7 +252,12 @@ export function getRanking(matches: Match[], formula?: RankingFormula): Ranking 
  * @param current The current participant.
  * @param other The opponent.
  */
-function processParticipant(rankingMap: RankingMap, formula: RankingFormula, current: ParticipantResult | null, other: ParticipantResult | null): void {
+function processParticipant(
+    rankingMap: RankingMap,
+    formula: RankingFormula,
+    current: ParticipantResult | null,
+    other: ParticipantResult | null
+): void {
     if (!current || current.id === null) return;
 
     const state = rankingMap[current.id] || {
@@ -219,23 +276,18 @@ function processParticipant(rankingMap: RankingMap, formula: RankingFormula, cur
 
     state.id = current.id;
 
-    if (current.forfeit || current.result)
-        state.played++;
+    if (current.forfeit || current.result) state.played++;
 
-    if (current.result === 'win')
-        state.wins++;
+    if (current.result === "win") state.wins++;
 
-    if (current.result === 'draw')
-        state.draws++;
+    if (current.result === "draw") state.draws++;
 
-    if (current.result === 'loss')
-        state.losses++;
+    if (current.result === "loss") state.losses++;
 
-    if (current.forfeit)
-        state.forfeits++;
+    if (current.forfeit) state.forfeits++;
 
     state.scoreFor += current.score || 0;
-    state.scoreAgainst += other && other.score || 0;
+    state.scoreAgainst += (other && other.score) || 0;
     state.scoreDifference = state.scoreFor - state.scoreAgainst;
 
     state.points = formula(state);
@@ -249,7 +301,13 @@ function processParticipant(rankingMap: RankingMap, formula: RankingFormula, cur
  * @param rankingMap The ranking map (object).
  */
 function createRanking(rankingMap: RankingMap): RankingItem[] {
-    const ranking = Object.values(rankingMap).sort((a, b) => a.points !== b.points ? b.points - a.points : b.played - a.played);
+    const ranking = Object.values(rankingMap).sort((a, b) =>
+        a.points !== b.points
+            ? b.points - a.points
+            : a.played !== b.played
+            ? b.played - a.played
+            : a.scoreDifference - b.scoreDifference
+    );
 
     const rank = {
         value: 0,
@@ -266,17 +324,16 @@ function createRanking(rankingMap: RankingMap): RankingItem[] {
 
 /**
  * Indicates whether the input is a match.
- * 
+ *
  * @param input A match or a match game.
  */
 export function isMatch(input: Match | MatchGame): input is Match {
-    return 'child_count' in input;
+    return "child_count" in input;
 }
-
 
 /**
  * Indicates whether the input is a match game.
- * 
+ *
  * @param input A match or a match game.
  */
 export function isMatchGame(input: Match | MatchGame): input is MatchGame {
