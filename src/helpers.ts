@@ -306,7 +306,7 @@ function createRanking(rankingMap: RankingMap): RankingItem[] {
             ? b.points - a.points
             : a.played !== b.played
             ? b.played - a.played
-            : a.scoreDifference - b.scoreDifference
+            : b.scoreDifference - a.scoreDifference
     );
 
     const rank = {
